@@ -1,5 +1,3 @@
 ---
-title: Koby Lewis
+title: Blog
 ---
-
-This is a **markdown** *test*
