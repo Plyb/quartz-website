@@ -8,5 +8,5 @@ I think there are a lot of ways that the development and deployment of AI could 
 
 ## Some of my Favorite Projects
 - [A machine learning training framework](https://github.com/DRAGNLabs/MIRROR-Pipeline) aimed at unifying the efforts my research lab
-- [A static analyzer](github.com/Plyb/flowdb-typescript) to find all possible database queries a function in a TypeScript could send
+- [A static analyzer](https://github.com/Plyb/flowdb-typescript) to find all possible database queries a function in a TypeScript could send
 - A natural-language-like [toy programming language](https://github.com/Plyb/lnp)
