@@ -7,7 +7,7 @@ interface ExternalLink {
 }
 
 const SITE_LINKS: readonly ExternalLink[] = [
-  { label: "About", url: "/About" },
+  { label: "About", url: "/about" },
   { label: "CV", url: "/cv.pdf" },
   { label: "GitHub", url: "https://github.com/plyb" },
   { label: "LinkedIn", url: "https://linkedin.com/in/kobylewis" },
