@@ -1,5 +1,6 @@
 ---
 title: About Me
+date: 2026-02-23
 ---
 
 I'm a computer scientist pursuing a PhD at [Brigham Young University (BYU)](https://www.byu.edu) in AI Safety. Currently I'm most interested in mechanistic interpretability and control! I did my MS in CS at BYU in programming languages and I have worked full time as a software engineer for [Awardco](https://www.award.co).

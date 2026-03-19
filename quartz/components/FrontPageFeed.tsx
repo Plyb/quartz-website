@@ -3,8 +3,9 @@ import RecentNotesConstructor from "./RecentNotes"
 
 export default (() => {
   const RecentNotes = RecentNotesConstructor({ 
-    title: "Blog", 
-    limit: 15 
+    title: "Koby Lewis", 
+    limit: 15,
+    filter: (f) => f.slug !== "index"
   })
   
   const FrontPageFeed: QuartzComponent = (props: QuartzComponentProps) => {

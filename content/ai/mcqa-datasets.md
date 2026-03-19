@@ -1,5 +1,6 @@
 ---
 title: Subjective MCQA Datasets
+date: 2026-02-23
 ---
 Recently I spent some time collecting datasets for multiple choice question answering, and categorizing them by how "objective" the answers are. Here's why, and what I found.
 
