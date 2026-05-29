@@ -1,6 +1,6 @@
 ---
-title: You're Probably Imagining AI Wrong (Against "Spicy Autocomplete")
 date: 2026-03-31
+title: You're Probably Imagining AI Wrong (Against "Spicy Autocomplete")
 ---
 **Intended Audience**: general public that knows some things about LLMs, but hasn't dived deep into them
 ___
@@ -14,7 +14,6 @@ Now, to be clear, I'm not claiming that current AI is good at everything. There 
 # What is "Spicy Autocorrect"?
 
 As far as I understand, when people refer to LLMs[^1] as "spicy autocomplete," they're referring to two things:
-
 1. LLMs are, fundamentally, a machine that takes in some text, selects[^2] a bit of text[^3] to come next, sticks that on the end, and repeats. This is the core of how ChatGPT and all the others actually write things, by choosing one bit of text at a time. When people say "AI is just predicting the next word/token," this is what they mean. This was true in the early days of LLMs, and it is still true (but [[#How Does Modern AI Work?|misleading!]]) today.
 2. In the olden days, LLMs were trained to select the next bit of text by feeding it a huge amount text from the internet and having it predict what comes next. After seeing enough examples, they could get pretty good at this. But if they stopped there, they wouldn't be nearly as powerful as they are today. Modern AI is doing much more than predicting likely internet text.
 Ultimately, though, terms like "spicy autocorrect" are used to imply that not only are LLMs not "intelligent," but that it's ridiculous to think that they even *could* be.
