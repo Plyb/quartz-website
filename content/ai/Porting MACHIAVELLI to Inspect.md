@@ -4,7 +4,7 @@ title: Porting MACHIAVELLI to Inspect
 ---
 # TL;DR
 The [MACHIAVELLI benchmark](https://aypan17.github.io/machiavelli/) aims to measure how often AI agents take unethical actions when pursuing a goal.
-Because this is an *alignment* benchmark, not a *capabilities* benchmark, it is more important that it be run on new generations of AI.
+Because this is an *alignment* benchmark, not a *capabilities* benchmark, it is more important that it be run on each new generation of AI.
 By re-implementing MACHIAVELLI using the [Inspect](https://inspect.aisi.org.uk/) framework, I reduced barriers for evaluators to use the benchmark, making it more likely that they will do so.
 I also [[#Learnings|learned a few things]] the way that may be helpful to others who are just getting started in evals, which I share here.
 The re-implementation can be found [on my GitHub](https://github.com/Plyb/inspect-machiavelli).
