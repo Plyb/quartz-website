@@ -1,3 +1,8 @@
+---
+date: 2026-05-30
+---
+
+
 This is a living collection of research libraries that I've built.
 
 [typed-datasets](https://github.com/Plyb/typed-datasets): a well-typed wrapper around HuggingFace datasets (see [[A Call for Better Type Hints in AI Safety Tooling]])
