@@ -2,6 +2,7 @@
 date: 2026-06-10
 title: Porting MACHIAVELLI to Inspect
 ---
+Update: The [PR is merged](https://github.com/UKGovernmentBEIS/inspect_evals/issues/1730#event-26635504519), MACHIAVELLI is now officially part of Inspect!
 # TL;DR
 The [MACHIAVELLI benchmark](https://aypan17.github.io/machiavelli/) aims to measure how often AI agents take unethical actions when pursuing a goal.
 Because this is an *alignment* benchmark, not a *capabilities* benchmark, it is more important that it be run on each new generation of AI.
