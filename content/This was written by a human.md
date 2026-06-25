@@ -5,7 +5,7 @@ date: 2026-06-25
 **TL;DR**: Despite appearances, whatever linked you here was written by me (a human), not AI.
 
 ---
-
+# Why my email might look like AI wrote it
 If you're reading this, I probably sent you an email. **That email was written by me**, not an AI[^1], but it might seem like it has some AI-like features. Here's why:
 - I intend my emails to be highly **"skimmable"**
 	- **Your time is valuable**. I want you to spend as much or as little time on my email as you feel appropriate
