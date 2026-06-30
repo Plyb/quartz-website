@@ -1,24 +1,38 @@
 ---
-date: 2026-06-29
-draft: "true"
+date: 2026-06-30
 ---
-DRAFT
+TL;DR: I present theoretical and empirical evidence that LLMs cannot be (exclusively) using a "correct answer feature" as the main mechanism by which they perform multiple choice question answering.
+___
+How do LLMs answer multiple choice questions? Many researchers have tried to tackle this from various angles over the years !!cite!!, but one hypothesized explanation seems particularly clean: the "correct answer feature". The idea of the "correct answer feature" is that there is some direction in an LLM's activation space that can be interpreted as something like a score for how "good" or "correct" an option is !!cite!!. Usually it is hypothesized to exist on the last token(s) of each option. And in fact, at least some researchers claim that they have found such a feature !!cite!!. The hypothesis is that the model then uses such a feature to direct attention to the correct answer and copy it's label to the output position.
 
-- TLDR
-- Intro - why would we look for correct answer features
-	- straightforward explanation (Lieberum even mentions it)
-	- previous results found them
+However, this cannot be the only explanation. There are both theoretical and empirical reasons to believe that LLMs must be doing something else to perform multiple choice question answering (MCQA).
+- Theoretical: The basic "correct answer feature" explanation assumes that the correct answer can be identified using only the tokens of the correct answer and any tokens that came before. This is not always the case. There are kinds of questions where the "correctness" of an option depends on context that comes later. Two examples of where this would break down:
+	- Intransitive options: Consider a model being given the question "Which of these hands would win in a game of rock-paper-scissors?", and then being presented with two options. On the final token of the first option, what should the "correct answer feature" read?
+	- Late-details: One could imagine a prompt being formatted such that some important detail, maybe even the question itself, is *after* the options.
+- Empirical: Despite the theoretical argument, you might expect LLMs to still use a correct-answer feature *when they can*, and rely on something else for the (somewhat unusual) cases described above. Indeed, [[#Finding High-Accuracy Domains|I find]] that most models, most of the time have lower accuracy on late-context prompts than ones in the more typical format. However, I also find that models use a nearly identical set of attention heads on both late- and early-context prompts, casting serious doubt on the idea that correct-answer features are the main mechanism by which LLMs perform MCQA.
 
+# Setup
+
+I first identified three different combinations of Llama models and question domains (see [[#Finding High-Accuracy Domains]]) where the model achieves at least 90% accuracy both when the question comes before the options and after (see [[#Experimental details]] for exact prompt formats). Then, using a similar setup to Lieberum et al. !!link!!, I found attention heads which directly contribute most heavily to models predicting the correct answer on those questions. I do this separately for each prompt type. I then categorized the attention heads and compared the results for the two prompt types.
+
+For a correct-answer feature to work as described in the intro, the model must be able to identify a correct answer at that answer's final token position. For question-first prompts, this is straightforward, but for option-first prompts, this becomes impossible in general. Because the model cannot use later token representations to influence earlier ones, the model has no access to the question while processing the options, and therefore cannot identify the correct answer at that point.
 # Results
 
-Using a similar setup to Lieberum et al. !!link!!, I find attention heads which directly contribute most heavily to various models predicting the correct answer on MCQA tasks. Unlike Lieberum et al., however, I do this both for prompt formats where the *question* comes before the *options*, and where the *options* come before the *questions*.
+Not only can some models do nearly as well on option-first prompts as on question first prompts, but I also found that a *nearly identical* set of heads was used for both prompt types. This result holds across question domains, model sizes, and base/instruct models. Assuming the attention patterns of high direct-effect attention heads accurately describe the circuit that these models are using to perform MCQA, these circuits cannot be (solely) using correct-answer features to do so.
 
-For a "correct answer feature" to work as described above, the model must be able to tell which is the correct answer at the token position at the end of the answer. For question-first prompts, this is straightforward, but for option-first prompts, this becomes impossible in general. The model cannot use information from later tokens to create a feature on an earlier token, so without knowing the question, there is no way to identify the correct answer.
+![[summary.png]]
 
-Not only can some models do nearly as well on option-first prompts as question first prompts, but I also found that a *nearly identical* set of heads was used for both prompt types. This result holds across question domains, model sizes, and base/instruct models. Assuming the attention patterns of high direct-effect attention heads accurately describe the circuit that these models are using to perform MCQA, these circuits cannot be (solely) using "correct answer features" to do so.
-# Experimental details
+Here we the top-p=0.8 heads by direct effect on correct answer prediction for three different models (all in the Llama family, but differing by size and base/instruct status) on three different question domains (see [[#Finding High-Accuracy Domains]] for details on the domains). Heads are ordered by direct effect, with higher effect heads at the top. Note that the highest contributing heads identical (and in identical order) for all three configurations. Also note that very few heads only show up in one prompt type, but not the other.
 
-For all of my experiments, the models were given a multiple choice question as a prompt in one of two formats, one where the question comes first, and one where the options come first
+The similarity of the head lists across prompt types indicates that LLMs seem to be using similar mechanisms for both prompt types. Given that this mechanism *cannot* be correct-answer features for options-first prompts, we can infer that these models seem to be using some other mechanism as the primary means for performing MCQA.
+# Limitations
+
+The theoretical argument for why LLMs can't be using correct-answer features only applies to the specific hypothesized mechanism described in the introduction, and only precludes using such a mechanism *in general*. It is still possible that LLMs use such a feature in specific cases, potentially as a reinforcement or aid to other mechanisms.
+
+For the empirical results, I only tested on the Llama 3 family of models, and made no attempt to see whether these results hold for other models. Additionally, I rely entirely on a list of top-p direct-effect attention heads to describe the mechanism by which the models perform MCQA. Such a head list only gives an incomplete picture of the underlying mechanism. A correct-answer feature circuit might rely on indirect effects or might rely on the same heads as the circuit used in option-first prompts, thereby rendering it indistinguishable to the analysis I performed here.
+# Appendix: Experimental details
+
+For all of my experiments, the models were given a multiple choice question as a prompt in one of two formats, one where the question comes first, and one where the options come first.
 
 **Question First**:
 ```
@@ -43,7 +57,6 @@ Answer: (
 ```
 
 I first found combinations of models and domains that scored highly on both prompt formats. I tagged all tokens according to various categories (ex: "label of the correct answer") and recorded the average attention each attention head gave to each tag when the model was answering correctly. I then used these scores to categorize various attention head types. I found that some head types were consistent across model size, base/instruct, domain, and prompt format.
-
 ## Finding High-Accuracy Domains
 
 The goal is to understand how an AI model successfully answers questions in these formats, and if the mechanisms differ between the formats. In order to do so, I first found pairs of `(model, domain)` that scored with a 90%+ accuracy on both prompt types.
@@ -79,8 +92,9 @@ Each token of each prompt was given one or more tags. The tags are as follows:
 - Each token of the prefix (`A highly knowledgeable and intelligent AI answers multiple-choice questions.`) was given its own tag.
 - A tag for tokens that are part of the `{question}`
 - One tag for each of the tokens in the answer prompt (`Answer: (`)
-
 ## Head Finding
 
 For each of the three configurations found in [[#Finding High-Accuracy Domains]], I found The top-p heads contributing at least 80% of the direct effect on the final residual stream. For these heads, I then measured how much value-weighted attention, on average, that head gave to tokens in each tag. "Correct-newline heads" are defined as heads that give significant attention to the newline of the correct answer. "Correct-label heads" do the same, but for the label of the correct answer. Like Lieberum et al., I also find many "late" attention heads that primarily attend to the last few tokens, "single answer heads", and "constant" heads.
+## Detailed Findings and Repo
 
+The main repo can be found [here](https://github.com/Plyb/late-context-heads/tree/main), with detailed results [here](https://github.com/Plyb/late-context-heads/tree/main/results).
