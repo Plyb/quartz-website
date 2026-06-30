@@ -9,7 +9,7 @@ However, this cannot be the only explanation. There are both theoretical and emp
 - Theoretical: The basic "correct answer feature" explanation assumes that the correct answer can be identified using only the tokens of the correct answer and any tokens that come before it. This is not always the case. There are some kinds of questions where "correctness" depends on context that comes after the option itself. Two examples of where this could happen:
 	- Intransitive options: Consider a model being given the question "Which of these hands would win in a game of rock-paper-scissors?", and then being presented with two options. On the final token of the first option, what should the "correct answer feature" read? There is no good answer, since it depends on what the second option is!
 	- Late-details: One could imagine a prompt being formatted such that some important detail is located *after* the options. This could be some kind of "Oh and by the way..." or even the question itself!
-- Empirical: Despite the theoretical argument, you might expect LLMs to still use a correct-answer feature *when possible*, and rely on something else for the (somewhat unusual) cases described above. Indeed, [[#Finding High-Accuracy Domains|I found]] that most models, most of the time, have slightly lower accuracy when the question is presented after the options. However, I also find that models use a nearly identical set of attention heads on both late- and early-context prompts, casting serious doubt on the idea that correct-answer features are the main mechanism by which LLMs perform MCQA.
+- Empirical: Despite the theoretical argument, you might expect LLMs to still use a correct-answer feature *when possible*, and rely on something else for the (somewhat unusual) cases described above. Indeed, [[#Finding High-Accuracy Domains|I found]] that most models, most of the time, have slightly lower accuracy when the question is presented after the options[^1]. However, I also find that models use a nearly identical set of attention heads on both question- and option-first prompts, casting serious doubt on the idea that correct-answer features are the main mechanism by which LLMs perform MCQA.
 
 # Setup
 
@@ -98,3 +98,5 @@ For each of the three configurations found in [[#Finding High-Accuracy Domains]]
 ## Detailed Findings and Repo
 
 The main repo can be found [here](https://github.com/Plyb/late-context-heads/tree/main), with detailed results [here](https://github.com/Plyb/late-context-heads/tree/main/results).
+
+[^1]: Lower accuracy on options-first prompts would be expected if a correct-answer feature was a significant contributor to MCQA capability. The difference in accuracy is pretty small however, and, as noted in the appendix, is occasionally even negative.
