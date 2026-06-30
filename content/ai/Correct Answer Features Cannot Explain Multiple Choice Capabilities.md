@@ -1,7 +1,8 @@
 ---
 date: 2026-06-30
+draft: "true"
 ---
-TL;DR: I present theoretical and empirical evidence that LLMs cannot be (exclusively) using a "correct answer feature" as the main mechanism by which they perform multiple choice question answering.
+TL;DR: I present theoretical and empirical evidence that LLMs cannot be (exclusively) using a "correct answer feature" as the main mechanism by which they perform multiple choice question answering. A hypothetical correct-answer feature would indicate the "correctness" of an option on the final token(s) of that option. However, such a mechanism cannot be used in all cases, and evidence from direct-effect head attribution indicates that a similar mechanism is used both in cases where a correct-answer feature would and wouldn't be a viable mechanism.
 ___
 How do LLMs answer multiple choice questions? Many researchers have tried to tackle this from various angles over the years !!cite!!, but one hypothesized explanation seems particularly clean: the "correct answer feature". The idea of the "correct answer feature" is that there is some direction in an LLM's activation space that can be interpreted as something like a score for how "good" or "correct" an option is !!cite!!. Usually it is hypothesized to exist on the last token(s) of each option. And in fact, at least some researchers claim that they have found such a feature !!cite!!. The hypothesis is that the model then uses such a feature to direct attention to the correct answer and copy it's label to the output position.
 
