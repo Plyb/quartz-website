@@ -62,9 +62,9 @@ I first found combinations of models and domains that scored highly on both prom
 The goal is to understand how an AI model successfully answers questions in these formats, and if the mechanisms differ between the formats. In order to do so, I first found pairs of `(model, domain)` that scored with a 90%+ accuracy on both prompt types.
 
 I tested 4 different question domains:
-1. ARC-Easy !!cite!!
+1. [ARC-Easy](https://huggingface.co/datasets/allenai/ai2_arc/viewer/ARC-Easy)
 2. Simple addition: Questions of the form `What is {X} + {Y}`, where `X` and `Y` were 1-9. Distractors were the correct sum -1/+1/+2
-3. Vocab: Question is a definition, with options being words. Take from !!cite!!
+3. Vocab: Question is a definition, with options being words. Take from [Toefl Essential Vocabulary 1k](https://huggingface.co/datasets/wordlevel/toefl-essential-vocabulary-1k/tree/main)
 4. Token-match: Question is `Which option is the word {word}`, where `{word}` is a single token word. `{word}` shows up as one of the options, along with some distractors. Simply tests ability to bind the label to the correct option, without needing any factual recall or computation.
 
 Below are the accuracies of different Llama models on these four domains. On the left of each pipe is the question-first accuracy, and on the right the answer-first accuracy. Pairs with >90% accuracy for both prompt types are bolded.
