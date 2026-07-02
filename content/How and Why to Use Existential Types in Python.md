@@ -8,7 +8,7 @@ While most mainstream languages don't have existential types built in, it turns 
 
 # What are Existential Types and Why Would you Want Them?
 
-Let's start with a problem. Let's say you want encode the idea of a graph into your program. Graphs have nodes which have neighbors, so let's define a few basic operations that we want for our graph.
+Let's start with a problem. Let's say you want to encode the idea of a graph into your program. Graphs have nodes which have neighbors, so let's define a few basic operations that we want for our graph.
 1. First, if you give me a node, I should be able to give you the set of all neighbors of that node.
 2. Second, if you give me a *set* of nodes, I should be able to give you the set of all neighbors of *all* those nodes. This second operation should be definable in terms of the first (and in some cases it is), but, as we'll see, sometimes it makes sense to define it separately for efficiency reasons.
 3. Finally, we'll need a node to start with, so we'll say each of our graphs has a "source" node.
@@ -175,7 +175,7 @@ Note that `run` will look basically identical in every implementation. This is a
 
 # Conclusion
 
-Existential types allow a general way to define a type with a list of operations on that type, without having to tell consumers what the type actually is. This is useful for abstraction and decomposition. Python and other mainstream programming languages don't have existential types built in, but some of them *do* have features that let you encode them. There are some downsides to doing so, including extra boilerplate for the `run` functions and the indirect style. Most of the time, using simple abstract classes or generic protocols will get you what you need. But if you're ever in a situation where 1) you need operations that take multiple instances of your abstract data type, or use the abstract data type in wrapper types and 2) you need to use the abstract data type as instances in another class, existential types can come to the rescue.
+Existential types allow a general way to define a type with a list of operations on that type, without having to tell consumers what the type actually is. This is useful for abstraction and decomposition. Python and other mainstream programming languages don't have existential types built in, but some of them *do* have features that let you encode them. There are some downsides to doing so, including extra boilerplate for the `run` functions and the indirect style. Most of the time, using simple abstract classes or generic protocols will get you what you need. But if you're ever in a situation where 1) you need operations that take multiple instances of your abstract data type, or use the abstract data type in wrapper types and 2) you need to store a value of the abstract type in a field of a non-generic class, existential types can come to the rescue.
 
 # Appendix
 
@@ -201,7 +201,7 @@ function makeInMemoryGraph(source: InMemoryNode): Graph {
 		return node.neighbors
 	}
 	function getAllNeighbors(nodes: Set<InMemoryNode>) {
-		return Array.from(nodes).reduce((acc, curr) => acc.union(curr.neighbors), new Set<InMemoryNode>())
+		return Array.from(nodes).reduce((acc, curr) => acc.union(curr.neighbors), new Set<InMemoryNode>()) // union requires ES2025
 	}
 
 	return continuation => continuation(source, getNeighbors, getAllNeighbors)
@@ -240,7 +240,7 @@ class {ModuleName}(Protocol):
 	def run[OutT](self, continuation: Continuation[OutT]) -> OutT: ... # "forall y. (Continuation y) -> y".
 ```
 
-The nested $\forall$ in the definition is why encoding existential types requires the type system to support rank-2 polymorphism, as footnote 4 points out. The $P \rightarrow y$ term is why we switch to continuation passing style, mentioned in footnote 5 (implications correspond with functions/continuations). The term "Module" here comes from Mitchell & Plotkin's "Abstract Types have Existential Type".
+The nested $\forall$ in the definition is why encoding existential types requires the type system to support rank-2 polymorphism (see footnote[^5]). The $P \rightarrow y$ term is why we switch to continuation passing style, (see footnote[^6], implications correspond with functions/continuations). The term "Module" here comes from Mitchell & Plotkin's "Abstract Types have Existential Type".
 
 One more note: in the template, `Continuation` is defined separately, then applied in the `run` signature. Python requires this because `Protocol`s are, as far as I know, the only way to do rank-2 polymorphism like this in Python. If your language has ways to do rank-2 polymorphism inline, you don't need to separate them out. TypeScript can do inline rank-2 polymorphism, which is why its template is simpler:
 
@@ -255,7 +255,7 @@ type ${ModuleName} = <OutT>( // OutT <-> y. "forall y"
 [^1]: I use pyright for my type checker. Unfortunately, mypy doesn't consistently work with the generic `__call__`'s that I use here as of the time of writing.
 [^2]: In fact, it's the "all neighbors" operation, and things like it, that mean abstract classes sometimes fail where existential types succeed. Abstract classes work as long as the operations you're performing only ever use a single, raw instance of the data type you're trying to represent. They allow you to access that instance through Python's `self`, TypeScript's `this`, or similar. But as soon as you need to use two or more instances, or you need to use the type wrapped in some other generic type (`set` in our case), abstract classes break down.
 [^3]: In case you're not familiar: for the purposes of this post, you can think of `Protocol`s as abstract classes. The important difference here is that `Protocol`s don't require explicit inheritance, which is important for our `Continuation`s later. I start using them now in order to not surprise you.
-[^4]: Some do, such as Rust's traits, or Java's wildcards. Function-oriented languages such as Haskell and ML also often include them.
+[^4]: Some do, such as Rust's `dyn Trait`, or Java's wildcards. Function-oriented languages such as Haskell and ML also often include them.
 [^5]: Any language that has "rank-2 polymorphism" can encode existential types. "Rank-2 polymorphism" just means you can define the type for a generic function whose parameters and/or return value are themselves generic functions.
 [^6]: This is called "continuation passing style" or CPS. It's actually very powerful! In some ways it's more expressive than "direct style", but it can definitely be harder to read. JavaScript likes to use these quite a bit, often referring to them as "callbacks".
-[^7]: The actual error you'd get if you tried this is a variance error. `set[Node] </: set[InMemoryNode]` because `Node != InMemoryNode`. If you switch to `Container` to get covariance instead, you get the error I described, which is `Method "get_all_neighbors" overrides class "Node" in an incompatible manner\n\tParameter 2 type mismatch: base parameter is type "Container[Node]", override parameter is type "Container[InMemoryNode]"`
+[^7]: The actual error you'd get if you tried this is a variance error. `set[Node] </: set[InMemoryNode]` because `set`'s type parameter is invariant. If you switch to `Container` to get covariance instead, you get the error I described, which is `Method "get_all_neighbors" overrides class "Node" in an incompatible manner\n\tParameter 2 type mismatch: base parameter is type "Container[Node]", override parameter is type "Container[InMemoryNode]"`
