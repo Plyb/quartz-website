@@ -119,11 +119,13 @@ All of the node handling is done inside a `continuation` helper function, which 
 Now what does an implementation of `Graph` look like?
 
 ```python
+@dataclass
 class InMemoryNode:
 	neighbors: set['InMemoryNode']
 
+@dataclass
 class InMemoryGraph(Graph):
-	_source: InMemoryNode
+	source: InMemoryNode
 
 	def _get_neighbors(self, node: InMemoryNode) -> set[InMemoryNode]:
 		return node.neighbors
@@ -132,23 +134,40 @@ class InMemoryGraph(Graph):
 		return set().union(*(self._get_neighbors(node) for node in nodes))
 	
 	def run[OutT](self, continuation: Graph.Continuation[OutT]) -> OutT:
-		return continuation(self._source, self._get_neighbors, self._get_all_neighbors) # this is where the magic happens!
+		return continuation(self.source, self._get_neighbors, self._get_all_neighbors) # this is where the magic happens!
 		
 		
 # and a database version for good measure
+@dataclass
 class DbGraph(Graph):
-	_source = "node_0"
+	source: str
 
 	def _get_neighbors(self, row_id: str) -> set[str]:
 		rows = db.query("SELECT dst FROM edges WHERE src = ?", (row_id,))
-		return {str(id) for (id, ) in rows}
+		return {str(id) for (id, ) in rows} # `db` defined elsewhere
 	
 	def _get_all_neighbors(self, row_ids: set[str]) -> set[str]:
 		rows = db.query(f"SELECT DISTINCT dst FROM edges WHERE src IN ({','.join('?'*len(row_ids))})", list(row_ids)) # note the separate, more efficient implementation
 		return {str(id) for (id,) in rows}
 	
 	def run[OutT](self, continuation: Graph.Continuation[OutT]) -> OutT:
-		return continuation(self._source, self._get_neighbors, self._get_all_neighbors)
+		return continuation(self.source, self._get_neighbors, self._get_all_neighbors)
+		
+		
+# ----- USAGE -------
+
+# "diamond" shaped graph
+node_d = InMemoryNode([])
+node_c = InMemoryNode([node_d])
+node_b = InMemoryNode([node_d])
+node_a = InMemoryNode([node_b, node_c])
+
+memory_graph = InMemoryGraph(node_a)
+
+db_graph = DbGraph()
+
+print_two_step_neighbors(memory_graph)
+print_two_step_neighbors(db_graph)
 ```
 
 The names of the private methods and variables don't matter here. What matters is that they can be passed into `continuation` in `run`. Because of how we defined `Continuation`, that function call forces `source`, `get_neighbors`, and `get_all_neighbors` to use the same node type, without having to actually explicitly declare that node type anywhere!
