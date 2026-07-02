@@ -4,7 +4,7 @@ date: 2026-07-02
 ---
 Good, specific type hints with a good type checker [[A Call for Better Type Hints in AI Safety Tooling|can make programming much easier]]. However, the most common languages that we use sometimes are missing useful type features. "Existential types" is one such feature. Its main purpose is to abstract away the underlying *representation* of a data type, while still exposing the *operations* you can use that data type for. In other words, it hides *what* the data is, but exposes *how* you can use it. In that way, it shares a lot in common with abstract classes, but existential types work in some cases where abstract classes fail.
 
-While most mainstream languages don't have existential types built in, it turns out that many of them contain the tools that allow you to build existential types yourself. In this post I'll show you [[#What are Existential Types and Why Would you Want Them?|why you might want to use existential types]] (feel free to skip if you're already familiar with them from other languages), and [[#How to Encode Existential Types in Python|how you can go about encoding them in Python]] (TypeScript implementation in the [[#TypeScript Implementation|appendix]]).
+While most mainstream languages don't have existential types built in, it turns out that many of them contain the tools that allow you to build existential types yourself. In this post I'll show you [[#What are Existential Types and Why Would you Want Them?|why you might want to use existential types]] (feel free to skip if you're already familiar with them from other languages), and [[#How to Encode Existential Types in Python|how you can go about encoding them in Python]][^1] (TypeScript implementation in the [[#TypeScript Implementation|appendix]]).
 
 # What are Existential Types and Why Would you Want Them?
 
@@ -33,7 +33,7 @@ class Node(ABC):
 	### get_all_neighbors???
 ```
 
-This works pretty well until we try to define the "all neighbors" operation[^1]. We can easily define abstract methods for `get_neighbors` and `get_source`, but what should the type of `get_all_neighbors` be? We could try something like this:
+This works pretty well until we try to define the "all neighbors" operation[^2]. We can easily define abstract methods for `get_neighbors` and `get_source`, but what should the type of `get_all_neighbors` be? We could try something like this:
 
 ```python
 @classmethod
@@ -47,38 +47,36 @@ But we'll run into trouble when we try to implement it.
 class InMemoryNode(Node):
 	# other methods omitted
 	
+	@classmethod
 	def get_all_neighbors(cls, nodes: set[X]) -> set[X]: # what do we put for 'X' here?
 		return set.union(*(node._get_neighbors() for node in nodes))
 ```
 
 What could we put for `X`? If we put `Self` (or equivalently, `InMemoryNode`), our type checker will reject it since the abstract class wants `set[Node]`, not `set[InMemoryNode]`. If we instead try to put `Node`, our type checker *would* be happy with us, but we've introduced a subtle issue: Now `InMemoryNode.get_all_neighbors` can accept *any* `Node` type. Why is this an issue? Going back to our problem statement, we might want to also encode graphs that use database rows as nodes. If we were to use `InMemoryNode.get_all_neighbors` on *those* kinds of nodes, we'd end up sending a separate database call per node, which is super inefficient!
 
-This reveals another constraint on our problem: for the "get all neighbors" operation to make sense as an *abstract* operation, implementations need to be able to *only* take in nodes of *it's own type*.
+This reveals another constraint on our problem: for the "get all neighbors" operation to make sense as an *abstract* operation, implementations need to be able to *only* take in nodes of *its own type*.
 
 ## Second Attempt: A Generic `Graph` Protocol
 
-Let's try something else then. What if we made an `Graph` protocol[^2] with a generic type parameter for the node type:
+Let's try something else then. What if we made a `Graph` protocol[^3] with a generic type parameter for the node type:
 
 ```python
 class Graph[NodeT](Protocol):
-	@abstractmethod
 	def get_neighbors(self, node: NodeT) -> set[NodeT]: ...
 	
-	@abstractmethod
 	def get_all_neighbors(self, nodes: set[NodeT]) -> set[NodeT]: ...
 	
-	@abstractmethod
 	def get_source(self) -> NodeT: ...
 ```
 
 So far so good, but this introduces another issue: now anything that wants to *use* a Graph has to provide it with a type parameter. There are three ways to handle this:
 1. Give the graph a concrete type, like `Graph[int]`: but this defeats the purpose of having it be abstract. We want consumers to not have to worry about what particular kind of `Graph` it is using.
 2. Leave the type argument out, or use `Any`: but this gets rid of our type-checker's ability to help us find errors.
-3. Give it a `TypeVar`, like `Graph[OuterNodeT]`: but `OuterNodeT` would need to be defined somewhere. The most obvious place is to make the function/class that is using the graph generic as well, but now the `NodeT` type parameter is "infecting" anything that uses the graph, and anything that uses the things that are using it, and so on. No one actually needs to know what the node type is, yet they are all having to declare it. Gross.
+3. Give it a `TypeVar`, like `Graph[OuterNodeT]`: but `OuterNodeT` would need to be defined somewhere. The most obvious place is to make the function/class that is using the graph generic as well. For functions and methods, this isn't a big deal, but if we wanted to define some other class that has a `Graph` as a field, that class would now also need a generic node type parameter. And any class that has *that* class as a field, and so on. The `NodeT` type parameter is now infecting anything that contains a `Graph`. Gross.
 
 ## Enter: Existential Types
 
-What we actually need is some way, in the type system, to say "There is some type T, and some operations that you can do with type T, but don't worry about what T actually is. Just use the operations I provide, and you will be fine". That is what an "existential type" is. Now, the bad news is that Python (and most mainstream programming languages[^3]) don't actually have existential types built in. The good news is there is a way to *encode* them using features that Python *does* have[^4].
+What we actually need is some way, in the type system, to say "There is some type T, and some operations that you can do with type T, but don't worry about what T actually is. Just use the operations I provide, and you will be fine". That is what an "existential type" is. Now, the bad news is that Python (and most mainstream programming languages[^4]) don't actually have existential types built in. The good news is there is a way to *encode* them using features that Python *does* have[^5].
 
 # How to Encode Existential Types in Python
 
@@ -113,7 +111,7 @@ def print_two_step_neighbors(graph: Graph) -> None:
 	graph.run(continuation)
 ```
 
-All of the node handling is done inside a `continuation` helper function, which is then given to `graph` to execute. It is a bit unfortunate that we need to use this kind of indirect-helper-function-style[^5] to get this to work, but it *does* solve the problem. Some things to note:
+All of the node handling is done inside a `continuation` helper function, which is then given to `graph` to execute. It is a bit unfortunate that we need to use this kind of indirect-helper-function-style[^6] to get this to work, but it *does* solve the problem[^1]. Some things to note:
 - `continuation` is the only place where `NodeT` needs to be defined. `print_two_step_neighbors` itself has no idea that `NodeT` even exists, and neither would anything consuming `print_two_step_neighbors`. No more "infection"!
 - The names `continuation` and `NodeT` here aren't important, I just use them for consistency.
 - `continuation` returns `None` here, but in principle it could return anything! For instance, you could imagine a very similar function that instead of printing the nodes, just returns their string representations.
@@ -122,35 +120,35 @@ Now what does an implementation of `Graph` look like?
 
 ```python
 class InMemoryNode:
-    neighbors: set['InMemoryNode']
+	neighbors: set['InMemoryNode']
 
 class InMemoryGraph(Graph):
-    _source: InMemoryNode
+	_source: InMemoryNode
 
-    def _get_neighbors(self, node: InMemoryNode) -> set[InMemoryNode]:
-        return node.neighbors
-    
-    def _get_all_neighbors(self, nodes: set[InMemoryNode]) -> set[InMemoryNode]:
-        return set.union(*(self._get_neighbors(node) for node in nodes))
-    
-    def run[OutT](self, continuation: Graph.Continuation[OutT]) -> OutT:
-        return continuation(self._source, self._get_neighbors, self._get_all_neighbors) # this is where the magic happens!
-        
-        
+	def _get_neighbors(self, node: InMemoryNode) -> set[InMemoryNode]:
+		return node.neighbors
+	
+	def _get_all_neighbors(self, nodes: set[InMemoryNode]) -> set[InMemoryNode]:
+		return set.union(*(self._get_neighbors(node) for node in nodes))
+	
+	def run[OutT](self, continuation: Graph.Continuation[OutT]) -> OutT:
+		return continuation(self._source, self._get_neighbors, self._get_all_neighbors) # this is where the magic happens!
+		
+		
 # and a database version for good measure
 class DbGraph(Graph):
-    _source = "node_0"
+	_source = "node_0"
 
-    def _get_neighbors(self, row_id: str) -> set[str]:
-        rows = db.query("SELECT dst FROM edges WHERE src = ?", (row_id,))
-        return {str(id) for (id, ) in rows}
-    
-    def _get_all_neighbors(self, row_ids: set[str]) -> set[str]:
-        rows = db.query(f"SELECT DISTINCT dst FROM edges WHERE src IN ({','.join('?'*len(row_ids))})", row_ids) # note the separate, more efficient implementation
-        return {str(r) for r in rows}
-    
-    def run[OutT](self, continuation: Graph.Continuation[OutT]) -> OutT:
-        return continuation(self._source, self._get_neighbors, self._get_all_neighbors)
+	def _get_neighbors(self, row_id: str) -> set[str]:
+		rows = db.query("SELECT dst FROM edges WHERE src = ?", (row_id,))
+		return {str(id) for (id, ) in rows}
+	
+	def _get_all_neighbors(self, row_ids: set[str]) -> set[str]:
+		rows = db.query(f"SELECT DISTINCT dst FROM edges WHERE src IN ({','.join('?'*len(row_ids))})", list(row_ids)) # note the separate, more efficient implementation
+		return {str(id) for (id,) in rows}
+	
+	def run[OutT](self, continuation: Graph.Continuation[OutT]) -> OutT:
+		return continuation(self._source, self._get_neighbors, self._get_all_neighbors)
 ```
 
 The names of the private methods and variables don't matter here. What matters is that they can be passed into `continuation` in `run`. Because of how we defined `Continuation`, that function call forces `source`, `get_neighbors`, and `get_all_neighbors` to use the same node type, without having to actually explicitly declare that node type anywhere!
@@ -177,7 +175,7 @@ Note that `run` will look basically identical in every implementation. This is a
 
 # Conclusion
 
-Existential types allow a general way to define a type with a list of operations on that type, without having to tell consumers what the type actually is. This is useful for abstraction and decomposition. Python and other mainstream programming languages don't have existential types built in, but some of them *do* have features that let you encode them, as long as you're willing to deal with a bit of boiler-plate and indirection.
+Existential types allow a general way to define a type with a list of operations on that type, without having to tell consumers what the type actually is. This is useful for abstraction and decomposition. Python and other mainstream programming languages don't have existential types built in, but some of them *do* have features that let you encode them. There are some downsides to doing so, including extra boilerplate for the `run` functions and the indirect style. Most of the time, using simple abstract classes or generic protocols will get you what you need. But if you're ever in a situation where 1) you need operations that take multiple instances of your abstract data type, or use the abstract data type in wrapper types and 2) you need to use the abstract data type as instances in another class, existential types can come to the rescue.
 
 # Appendix
 
@@ -187,26 +185,26 @@ There are lots of different ways you could do this in TypeScript, but it boils d
 
 ```ts
 type Graph = <OutT>(
-        continuation: <NodeT>(
-            source: NodeT,
-            getNeighbors: (node: NodeT) => Set<NodeT>,
-            getAllNeighbors: (nodes: Set<NodeT>) => Set<NodeT>
-        ) => OutT
-    ) => OutT
+		continuation: <NodeT>(
+	   	 source: NodeT,
+	   	 getNeighbors: (node: NodeT) => Set<NodeT>,
+	   	 getAllNeighbors: (nodes: Set<NodeT>) => Set<NodeT>
+		) => OutT
+	) => OutT
 
 type InMemoryNode = {
-    neighbors: Set<InMemoryNode>
+	neighbors: Set<InMemoryNode>
 }
 
 function makeInMemoryGraph(source: InMemoryNode): Graph {
-    function getNeighbors(node: InMemoryNode) {
-        return node.neighbors
-    }
-    function getAllNeighbors(nodes: Set<InMemoryNode>) {
-        return Array.from(nodes).reduce((acc, curr) => acc.union(curr.neighbors), new Set<InMemoryNode>())
-    }
+	function getNeighbors(node: InMemoryNode) {
+		return node.neighbors
+	}
+	function getAllNeighbors(nodes: Set<InMemoryNode>) {
+		return Array.from(nodes).reduce((acc, curr) => acc.union(curr.neighbors), new Set<InMemoryNode>())
+	}
 
-    return continuation => continuation(source, getNeighbors, getAllNeighbors)
+	return continuation => continuation(source, getNeighbors, getAllNeighbors)
 }
 ```
 
@@ -214,21 +212,21 @@ Using that pattern, the template would be
 
 ```ts
 type ${ModuleName} = <OutT>(
-        continuation: <${RepresentationT}>(
-            ${operations using RepresentationT}
-        ) => OutT
-    ) => OutT
+		continuation: <${RepresentationT}>(
+	   	 ${operations using RepresentationT}
+		) => OutT
+	) => OutT
 
 function make${ImplementationName}(${constructor parameters}): ${ModuleName} {
-    ${operation definitions}
+	${operation definitions}
 
-    return continuation => continuation(${operations})
+	return continuation => continuation(${operations})
 }
 ```
 
 ## Theoretical Background
 
-Existential types are called "existential" because they are the type-theory equivalent of existential quantifiers in logic: $\exists x. P$ ("there exists some `x` such that proposition `P` is true"). Its counterpart is "universal quantification": $\forall x. P$ ("for *all* `x`s, proposition `P` is true"). In logic, if you have access to $\forall$, you can you it to define $\exists$ like so: $\exists x. P := \forall y. (\forall x. P \rightarrow y) \rightarrow y$ (so $\exists x. P$ means that for any conclusion `y`, if I you can tell me that `y` is true given a proof of proposition `P` with *any* `x` substituted in, I can tell you that `y` is true). This makes sense. You're saying that "anything I could want to do with proposition `P`" (the $\forall y$ part) I should be able to do *regardless* of the `x` that is used in `P`. In other words, it's enough for me to know that there *exists* some `x` such that `P` is true. I don't have to know what `x` actually is to then go on to use `P`.
+Existential types are called "existential" because they are the type-theory equivalent of existential quantifiers in logic: $\exists x. P$ ("there exists some `x` such that proposition `P` is true"). Its counterpart is "universal quantification": $\forall x. P$ ("for *all* `x`s, proposition `P` is true"). In logic, if you have access to $\forall$, you can define $\exists$ like so: $\exists x. P := \forall y. ((\forall x. P \rightarrow y) \rightarrow y)$ (so $\exists x. P$ means "give me a proof that you can use `P` to prove `y` with *any* `x` substituted in the `P`, and I'll tell you that `y` is true"). This makes sense. You're saying that "anything I could want to do with proposition `P`" (the $\forall y$ part, corresponding to the *operations* on `x` in the code) I should be able to do *regardless* of the `x` that is used in `P`. Another way of putting it: it's enough for me to know that there *exists* some `x` such that `P` is true. I don't have to know what `x` actually is to then go on to use `P`.
 
 What does this have to do with programming? The [Curry-Howard Correspondence](https://web2.qatar.cmu.edu/cs/15317/lectures/04-curryhoward.pdf) tells us that logical propositions *are the same thing* as types. So, if we can define a logical proposition with $\exists$, that tells us there is a corresponding *type* using existentials. And luckily, many mainstream languages have the equivalent of $\forall$ in their type system, which allows us to use it to encode $\exists$: namely, generics (sometimes called type polymorphism). This is where the [[#Template for Existential Types|template]] came from:
 
@@ -242,20 +240,21 @@ class {ModuleName}(Protocol):
 	def run[OutT](self, continuation: Continuation[OutT]) -> OutT: ... # "forall y. (Continuation y) -> y".
 ```
 
-The nested $\forall$ in the definition is why encoding existential types requires the type system to support rank-2 polymorphism, as footnote 4 points out. The $P \rightarrow y$ term is why we switch to continuation passing style, mentioned in footnote 5 (implications correspond with functions/continuations).
+The nested $\forall$ in the definition is why encoding existential types requires the type system to support rank-2 polymorphism, as footnote 4 points out. The $P \rightarrow y$ term is why we switch to continuation passing style, mentioned in footnote 5 (implications correspond with functions/continuations). The term "Module" here comes from Mitchell & Plotkin's "Abstract Types have Existential Type".
 
 One more note: in the template, `Continuation` is defined separately, then applied in the `run` signature. Python requires this because `Protocol`s are, as far as I know, the only way to do rank-2 polymorphism like this in Python. If your language has ways to do rank-2 polymorphism inline, you don't need to separate them out. TypeScript can do inline rank-2 polymorphism, which is why its template is simpler:
 
 ```ts
 type ${ModuleName} = <OutT>( // OutT <-> y. "forall y"
-        continuation: <${RepresentationT}>( // RepresentationT <-> x, "forall x"
-            ${operations using RepresentationT} // "P"
-        ) => OutT // " -> y"
-    ) => OutT // " -> y"
+		continuation: <${RepresentationT}>( // RepresentationT <-> x, "forall x"
+	   	 ${operations using RepresentationT} // "P"
+		) => OutT // " -> y"
+	) => OutT // " -> y"
 ```
 
-[^1]: In fact, it's the "all neighbors" operation, and things like it, that mean abstract classes sometimes fail where existential types succeed. Abstract classes work as long as the operations you're performing only ever use a single, raw instance of the data type you're trying to represent. They allow you to access that instance through Python's `self`, TypeScript's `this`, or similar. But as soon as you need to use two or more instances, or you need to use the type wrapped in some other generic type (`set` in our case), abstract classes break down.
-[^2]: In case you're not familiar: for the purposes of this post, you can think of `Protocol`s as abstract classes. The important difference here is that `Protocol`s don't require explicit inheritance, which is important for our `Continuation`s later. I start using them now in order to not surprise you.
-[^3]: There are some less popular ones, mostly function-oriented languages like Haskell or ML, that do.
-[^4]: Any language that has "rank-2 polymorphism" can encode existential types. "Rank-2 polymorphism" just means you can define the type for a generic function whose parameters and/or return value are themselves generic functions.
-[^5]: This is referred to as "continuation passing style" or CPS. It's actually very powerful! In some ways it's more expressive than "direct style", but it can definitely be harder to read. JavaScript likes to use these quite a bit, often referring to them as "callbacks".
+[^1]: I use pyright for my type checker. Unfortunately, mypy doesn't consistently work with the generic `__call__`'s that I use here as of the time of writing.
+[^2]: In fact, it's the "all neighbors" operation, and things like it, that mean abstract classes sometimes fail where existential types succeed. Abstract classes work as long as the operations you're performing only ever use a single, raw instance of the data type you're trying to represent. They allow you to access that instance through Python's `self`, TypeScript's `this`, or similar. But as soon as you need to use two or more instances, or you need to use the type wrapped in some other generic type (`set` in our case), abstract classes break down.
+[^3]: In case you're not familiar: for the purposes of this post, you can think of `Protocol`s as abstract classes. The important difference here is that `Protocol`s don't require explicit inheritance, which is important for our `Continuation`s later. I start using them now in order to not surprise you.
+[^4]: Some do, such as Rust's traits, or Java's wildcards. Function-oriented languages such as Haskell and ML also often include them.
+[^5]: Any language that has "rank-2 polymorphism" can encode existential types. "Rank-2 polymorphism" just means you can define the type for a generic function whose parameters and/or return value are themselves generic functions.
+[^6]: This is called "continuation passing style" or CPS. It's actually very powerful! In some ways it's more expressive than "direct style", but it can definitely be harder to read. JavaScript likes to use these quite a bit, often referring to them as "callbacks".
