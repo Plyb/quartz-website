@@ -1,4 +1,7 @@
-
+---
+title: How and Why to Use Existential Types in Python (+TypeScript)
+date: 2026-07-02
+---
 Good, specific type hints with a good type checker [[A Call for Better Type Hints in AI Safety Tooling|can make programming much easier]]. However, the most common languages that we use sometimes are missing useful type features. "Existential types" is one such feature. Its main purpose is to abstract away the underlying *representation* of a data type, while still exposing the *operations* you can use that data type for. In other words, it hides *what* the data is, but exposes *how* you can use it. In that way, it shares a lot in common with abstract classes, but existential types work in some cases where abstract classes fail.
 
 While most mainstream languages don't have existential types built in, it turns out that many of them contain the tools that allow you to build existential types yourself. In this post I'll show you [[#What are Existential Types and Why Would you Want Them?|why you might want to use existential types]] (feel free to skip if you're already familiar with them from other languages), and [[#How to Encode Existential Types in Python|how you can go about encoding them in Python]] (TypeScript implementation in the [[#TypeScript Implementation|appendix]]).
