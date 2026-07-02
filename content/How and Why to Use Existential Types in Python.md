@@ -49,10 +49,10 @@ class InMemoryNode(Node):
 	
 	@classmethod
 	def get_all_neighbors(cls, nodes: set[X]) -> set[X]: # what do we put for 'X' here?
-		return set.union(*(node._get_neighbors() for node in nodes))
+		return set().union(*(node._get_neighbors() for node in nodes))
 ```
 
-What could we put for `X`? If we put `Self` (or equivalently, `InMemoryNode`), our type checker will reject it since the abstract class wants `set[Node]`, not `set[InMemoryNode]`. If we instead try to put `Node`, our type checker *would* be happy with us, but we've introduced a subtle issue: Now `InMemoryNode.get_all_neighbors` can accept *any* `Node` type. Why is this an issue? Going back to our problem statement, we might want to also encode graphs that use database rows as nodes. If we were to use `InMemoryNode.get_all_neighbors` on *those* kinds of nodes, we'd end up sending a separate database call per node, which is super inefficient!
+What could we put for `X`? If we put `Self` (or equivalently, `InMemoryNode`), our type checker will reject it since the abstract class wants `set[Node]`, not `set[InMemoryNode]`[^7]. If we instead try to put `Node`, our type checker *would* be happy with us, but we've introduced a subtle issue: Now `InMemoryNode.get_all_neighbors` can accept *any* `Node` type. Why is this an issue? Going back to our problem statement, we might want to also encode graphs that use database rows as nodes. If we were to use `InMemoryNode.get_all_neighbors` on *those* kinds of nodes, we'd end up sending a separate database call per node, which is super inefficient!
 
 This reveals another constraint on our problem: for the "get all neighbors" operation to make sense as an *abstract* operation, implementations need to be able to *only* take in nodes of *its own type*.
 
@@ -129,7 +129,7 @@ class InMemoryGraph(Graph):
 		return node.neighbors
 	
 	def _get_all_neighbors(self, nodes: set[InMemoryNode]) -> set[InMemoryNode]:
-		return set.union(*(self._get_neighbors(node) for node in nodes))
+		return set().union(*(self._get_neighbors(node) for node in nodes))
 	
 	def run[OutT](self, continuation: Graph.Continuation[OutT]) -> OutT:
 		return continuation(self._source, self._get_neighbors, self._get_all_neighbors) # this is where the magic happens!
@@ -258,3 +258,4 @@ type ${ModuleName} = <OutT>( // OutT <-> y. "forall y"
 [^4]: Some do, such as Rust's traits, or Java's wildcards. Function-oriented languages such as Haskell and ML also often include them.
 [^5]: Any language that has "rank-2 polymorphism" can encode existential types. "Rank-2 polymorphism" just means you can define the type for a generic function whose parameters and/or return value are themselves generic functions.
 [^6]: This is called "continuation passing style" or CPS. It's actually very powerful! In some ways it's more expressive than "direct style", but it can definitely be harder to read. JavaScript likes to use these quite a bit, often referring to them as "callbacks".
+[^7]: The actual error you'd get if you tried this is a variance error. `set[Node] </: set[InMemoryNode]` because `Node != InMemoryNode`. If you switch to `Container` to get covariance instead, you get the error I described, which is `Method "get_all_neighbors" overrides class "Node" in an incompatible manner\n\tParameter 2 type mismatch: base parameter is type "Container[Node]", override parameter is type "Container[InMemoryNode]"`
