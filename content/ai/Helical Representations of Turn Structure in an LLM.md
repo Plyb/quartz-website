@@ -1,7 +1,7 @@
 ---
 date: 2026-03-19
 ---
-This is adapted from my application for Neel Nanda's MATS 10.0 stream. It wasn't accepted, so don't use this as a *good* example of an application, but I still think I got some interesting results worth sharing.
+This is adapted from my application for Neel Nanda's MATS 10.0 stream.
 # Executive Summary
 I studied the geometry of turn-taking representations in a Llama model. I hypothesized that the model would represent a token’s position in the turn taking structure as a vector that rotates through a plane, given the cyclical nature of a turn-based conversation (the “clock” hypothesis). This is opposed to the traditional view that features are one-dimensionally linear (the “progress bar” or “pendulum” hypotheses). I found evidence supporting both a linear representation of turn-taking and a rotational representation, indicating that turn taking is actually represented helically, or at least that a helical model can approximate the true representation.
 ## Key Evidence
