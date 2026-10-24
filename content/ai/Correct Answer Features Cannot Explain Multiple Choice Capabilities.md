@@ -1,6 +1,8 @@
 ---
 date: 2026-06-30
 ---
+UPDATE: This research was accepted as an [extended abstract](https://openreview.net/forum?id=DXjn0rXufC) at BlackboxNLP 2026!
+___
 TL;DR: I present theoretical and empirical evidence that LLMs cannot be (exclusively) using a "correct answer feature" as the main mechanism by which they perform multiple choice question answering. A hypothetical correct-answer feature would indicate the "correctness" of an option on the final token(s) of that option. However, such a mechanism cannot be used in all cases, and evidence from direct-effect head attribution indicates that a similar mechanism is used both in cases where a correct-answer feature would and wouldn't be a viable mechanism.
 ___
 How do LLMs answer multiple choice questions? [Many](https://arxiv.org/pdf/2307.09458v3) [researchers](https://transformer-circuits.pub/2025/attribution-graphs/methods.html) [have](https://interp.open-moss.com/posts/complete-replacement) [tried](https://openreview.net/forum?id=6NNA0MxhCH) to tackle this from various angles over the years, but one hypothesized explanation seems particularly clean: the "correct answer feature". The idea of the "correct answer feature" is that there is some direction in an LLM's activation space that can be interpreted as something like a score for how "good" or "correct" an option is. Usually it is hypothesized to exist on the last token(s) of each option. And in fact, at least [some](https://transformer-circuits.pub/2025/attribution-graphs/methods.html) [researchers](https://interp.open-moss.com/posts/complete-replacement) claim that they have found such a feature.
