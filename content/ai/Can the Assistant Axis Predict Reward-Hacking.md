@@ -3,7 +3,7 @@ title: Can the Assistant Axis Predict Reward-Hacking?
 description: The Assistant Axis (Lu et al.) has a surprising lack of robust correlation with reward-hacking in coding tasks on GPT-OSS-120B.
 date: 2026-09-09
 ---
-NOTE: This article was written by Jansen Nye, a member of my research lab based on some exploratory studies we've done. As he notes, we collaborated on this research. The article was written by him with some edits suggested by me. -- Koby
+NOTE: This article was written by Jansen Nye, a member of my research lab based on some exploratory studies we've done. As he notes, we collaborated on this research. The article was written by him with some edits suggested by me. His original post is [here](https://jansennye.com/research/can-the-assistant-axis-predict-reward-hacking/). -- Koby
 
 TL;DR The Assistant Axis doesn't seem to have any special connection to reward hacking, which we show. We suspected that a drop in the Assistant Axis might be a symptom of the Persona Selection Model breaking down in the face of RLVR. We also discuss pitfalls of using AUROC on feature projections and why that initially led us astray.
 
