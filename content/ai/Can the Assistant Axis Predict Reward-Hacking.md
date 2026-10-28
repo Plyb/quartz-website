@@ -3,7 +3,7 @@ title: Can the Assistant Axis Predict Reward-Hacking?
 description: The Assistant Axis (Lu et al.) has a surprising lack of robust correlation with reward-hacking in coding tasks on GPT-OSS-120B.
 date: 2026-09-09
 ---
-NOTE: This article was written by Jansen Nye, a member of my research lab based on some exploratory studies we've done. As he notes, we collaborated on this research. The article was written by him with some edits suggested by me. His original post is [here](https://jansennye.com/research/can-the-assistant-axis-predict-reward-hacking/). -- Koby
+NOTE: This article was written by Jansen Nye, a member of my research lab, based on some exploratory studies we've done. As he notes, we collaborated on this research. The article was written by him with some edits suggested by me. His original post is [here](https://jansennye.com/research/can-the-assistant-axis-predict-reward-hacking/). -- Koby
 
 TL;DR The Assistant Axis doesn't seem to have any special connection to reward hacking, which we show. We suspected that a drop in the Assistant Axis might be a symptom of the Persona Selection Model breaking down in the face of RLVR. We also discuss pitfalls of using AUROC on feature projections and why that initially led us astray.
 
@@ -22,8 +22,7 @@ The control experiments and analyses below are my work; the Assistant Axis extra
 
 *The reward-hacking setup.* GPT-OSS-120B is tasked with solving hard, but possible, LiveCodeBench problems over up to five attempts. Only part of the test suite is visible to the model, so reward-hacking can be detected when only the visible tests pass, which indicate the model special-casing or defeating the tests; an LLM judge reviews transcripts and reasoning traces to verify that the model did so knowingly in any such case. Getting the model to reward-hack often enough to gather useful data was difficult, but in the best setup & problem set it happens up to ~8% of the time. 
 
-*The data.* Our data spanned 824 transcripts across 41 coding problems, of which 157 cases were flagged as clear reward-hacking and another 32 were flagged as weaker cases. We fed each transcript back through the model and recorded the layer-17 residual stream, averaged separately over the prompt, reasoning trace, and final answer. Hacking turns are compared with non-hacking 
-instances on the same problem and at the same turn number[^turn-matching], yielding 868 matched pairs. Within each group, we count the fraction of (hack, non-hack) pairs where the hack turn projects higher on the Assistant Axis than the non-hack turn, and pool those counts across groups, resulting in a stratified AUROC score.
+*The data.* Our data spanned 824 transcripts across 41 coding problems, of which 157 cases were flagged as clear reward-hacking and another 32 were flagged as weaker cases. We fed each transcript back through the model and recorded the layer-17 residual stream, averaged separately over the prompt, reasoning trace, and final answer. Hacking turns are compared with non-hacking instances on the same problem and at the same turn number[^turn-matching], yielding 868 matched pairs. Within each group, we count the fraction of (hack, non-hack) pairs where the hack turn projects higher on the Assistant Axis than the non-hack turn, and pool those counts across groups, resulting in a stratified AUROC score.
 
 ## The Assistant Axis vs. Random Controls
 
